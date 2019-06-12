@@ -1,3 +1,3 @@
 # FFM
 
-*F*ast *F*ile *M*anager
+**F**ast **F**ile **M**anager
