@@ -105,6 +105,7 @@ int main(){
                         case 'q':
                                 endwin();
                                 exit(0);
+                        case 66:
                         case 'n':
                                 cursor++;
                                 move(0, 0);
@@ -112,6 +113,7 @@ int main(){
                                 closedir(prevdir);
                                 clrtobot();
                                 continue;
+                        case 65:
                         case 'e':
                                 cursor--;
                                 move(0, 0);
@@ -126,6 +128,7 @@ int main(){
                                 closedir(prevdir);
                                 clrtobot();
                                 continue;
+                        case 67:
                         case 'i':
                                 if(strcmp(prevmode, "dir") != 0){
                                         strcat(wd, selection->d_name);
@@ -146,6 +149,7 @@ int main(){
                                         selection = NULL;
                                         continue;
                                 }
+                        case 68:
                         case 'h':
                                 count = 0;
                                 for(iter = 0; iter < 100; iter++){
