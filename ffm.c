@@ -21,7 +21,7 @@ void displayDir(DIR *cdir, int w, int cursor);
 int main(){
         int cursor = 1, count = 0, iter = 0, color = 0;
         char ch;
-        char buf[200], prevmode[4], wd[100], chbuf[200];
+        char buf[200], prevmode[4], wd[100], chbuf[200], cploc[100], cpdest[100];
         FILE *cat;
         DIR *cdir, *prevdir, *nextdir;
         struct dirent *selection, *next;
@@ -169,6 +169,24 @@ int main(){
                                         }
                                 }
                                 continue;
+                        case 'c':
+                                strcpy(cploc, wd);
+                                strcat(cploc, selection->d_name);
+                                move(0, 0);
+                                closedir(cdir);
+                                closedir(prevdir);
+                                clrtobot();
+                                continue;
+                        case 'v':
+                                if(cploc != NULL){
+                                        snprintf(buf, sizeof(buf), "cp %s %s", cploc, wd);
+                                        system(buf);
+                                        move(0, 0);
+                                        closedir(cdir);
+                                        closedir(prevdir);
+                                        clrtobot();
+                                        continue;
+                                }
                         default:
                                 move(0, 0);
                                 closedir(cdir);
