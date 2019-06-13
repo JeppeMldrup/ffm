@@ -12,7 +12,7 @@ sudo make install
 ## Controls
 
 The standard controls for traversing directories is currently vim-controls on a colemak layout(Or the arrow keys) like this
-- Left: `h` or &larr;
+- Left: `h` or `&larr;`
 - Up: `n` or &uarr;
 - Down: `e` &darr;
 - Right: `i` &rarr;
