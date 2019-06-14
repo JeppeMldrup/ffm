@@ -17,6 +17,7 @@ bool resized = false;
 
 void resize(int sig);
 void displayDir(struct dirent *dir[], int w, int cursor, int size);
+void sortDir(struct dirent *dir[], int size);
 
 int main(){
         int cursor = 0, count, i, j;
@@ -58,6 +59,7 @@ int main(){
                                 continue;
                         count++;
                 }
+                sortDir(selection, count);
                 if(cursor < 0)
                         cursor = count-1;
                 else if(cursor >= count)
@@ -86,6 +88,7 @@ int main(){
                         count++;
                 }
 
+                sortDir(prev, count);
                 displayDir(prev, 0, -1, count);
 
                 i = 1;
@@ -120,6 +123,7 @@ int main(){
                                         continue;
                                 count++;
                         }
+                        sortDir(next, count);
                         displayDir(next, width*2, -1, count);
                 }
 
@@ -238,6 +242,7 @@ void displayDir(struct dirent *dir[], int w, int cursor, int size){
                                         addch(dir[i]->d_name[j] | COLOR_PAIR(2) | A_REVERSE);
                                         j++;
                                 }
+                                addch('/' | COLOR_PAIR(2) | A_REVERSE);
                         }
                         else{
                                 while(dir[i]->d_name[j] != '\0'){
@@ -259,6 +264,7 @@ void displayDir(struct dirent *dir[], int w, int cursor, int size){
                                         addch(dir[i]->d_name[j] | COLOR_PAIR(2));
                                         j++;
                                 }
+                                addch('/' | COLOR_PAIR(2));
                         }
                         else{
                                 while(dir[i]->d_name[j] != '\0'){
@@ -268,5 +274,28 @@ void displayDir(struct dirent *dir[], int w, int cursor, int size){
                         }
                         j = 0;
                 }
+        }
+}
+
+void sortDir(struct dirent *dir[], int size){
+        struct dirent *buf[size];
+        int i, j;
+
+        for(i = 0; i < size; i++){
+                if(dir[i]->d_type == DT_DIR){
+                        buf[j] = dir[i];
+                        j++;
+                }
+        }
+
+        for(i = 0; i < size; i++){
+                if(dir[i]->d_type != DT_DIR){
+                        buf[j] = dir[i];
+                        j++;
+                }
+        }
+
+        for(i = 0; i < size; i++){
+                dir[i] = buf[i];
         }
 }
