@@ -16,15 +16,15 @@ int h, w;
 bool resized = false;
 
 void resize(int sig);
-void displayDir(DIR *cdir, int w, int cursor);
+void displayDir(struct dirent *dir[], int w, int cursor, int size);
 
 int main(){
-        int cursor = 1, count = 0, iter = 0, color = 0;
+        int cursor = 0, count, i, j;
         char ch;
         char buf[200], prevmode[4], wd[100], chbuf[200], cploc[100], cpdest[100];
         FILE *cat;
         DIR *cdir, *prevdir, *nextdir;
-        struct dirent *selection, *next;
+        struct dirent *prev[40], *selection[40], *next[40];
 
         getcwd(wd, sizeof(wd));
         strcat(wd, "/");
@@ -44,19 +44,24 @@ int main(){
 
         while(1){
                 count = 0;
-                iter = 0;
+                i = 0;
+                j = 0;
 
                 addstr(wd);
 
                 cdir = opendir(wd);
                 
-                count = 0;
-                do{
-                        selection = readdir(cdir);
-                        if(selection->d_name[0] == '.' && hideDotFiles)
+                while(1){
+                        if((selection[count] = readdir(cdir)) == NULL || count > 40)
+                                break;
+                        if(selection[count]->d_name[0] == '.' && hideDotFiles)
                                 continue;
                         count++;
-                }while(count <= cursor);
+                }
+                if(cursor < 0)
+                        cursor = count-1;
+                else if(cursor >= count)
+                        cursor = 0;
 
                 cdir = opendir(wd);
                 
@@ -65,39 +70,57 @@ int main(){
 
                 prevdir = opendir(buf);
 
-                if(selection->d_type == DT_DIR)
+                if(selection[cursor]->d_type == DT_DIR)
                         strcpy(prevmode, "dir");
-                else if(selection->d_type == DT_REG)
+                else if(selection[cursor]->d_type == DT_REG)
                         strcpy(prevmode, "cat");
 
-                displayDir(cdir, width, cursor);
-                displayDir(prevdir, 0, -1);
+                displayDir(selection, width, cursor, count);
 
-                iter = 1;
-                count = width*2;
+                count = 0;
+                while(1){
+                        if((prev[count] = readdir(prevdir)) == NULL || count > 40)
+                                break;
+                        if(prev[count]->d_name[0] == '.' && hideDotFiles)
+                                continue;
+                        count++;
+                }
+
+                displayDir(prev, 0, -1, count);
+
+                i = 1;
+                j = width*2;
                 if(strcmp(prevmode, "cat") == 0){
                         strcpy(buf, wd);
-                        strcat(buf, selection->d_name);
+                        strcat(buf, selection[cursor]->d_name);
                         cat = fopen(buf, "r");
                         while((ch = fgetc(cat)) != EOF){
-                                if(iter >= h-1)
+                                if(i >= h-1)
                                         break;
-                                if(ch == '\n' || count >= w-1){
-                                        iter++;
-                                        count = width*2;
+                                if(ch == '\n' || j >= w-1){
+                                        i++;
+                                        j = width*2;
                                         continue;
                                 }
-                                move(iter, count);
+                                move(i, j);
                                 addch(ch);
-                                count++;
+                                j++;
                         }
                 }
                 else if(strcmp(prevmode, "dir") == 0){
                         strcpy(buf, wd);
-                        strcat(buf, selection->d_name);
+                        strcat(buf, selection[cursor]->d_name);
                         strcat(buf, "/");
                         nextdir = opendir(buf);
-                        displayDir(nextdir, width*2, -1);
+                        count = 0;
+                        while(1){
+                                if((next[count] = readdir(nextdir)) == NULL || count > 40)
+                                        break;
+                                if(next[count]->d_name[0] == '.' && hideDotFiles)
+                                        continue;
+                                count++;
+                        }
+                        displayDir(next, width*2, -1, count);
                 }
 
                 char input = getch();
@@ -131,53 +154,51 @@ int main(){
                         case 67:
                         case 'i':
                                 if(strcmp(prevmode, "dir") != 0){
-                                        strcat(wd, selection->d_name);
+                                        strcat(wd, selection[cursor]->d_name);
                                         snprintf(buf, sizeof(buf), "xdg-open %s", wd);
                                         system(buf);
                                         endwin();
                                         exit(0);
                                 }
                                 else{
-                                        iter = 0;
-                                        strcat(wd, selection->d_name);
+                                        i = 0;
+                                        strcat(wd, selection[cursor]->d_name);
                                         strcat(wd, "/");
                                         move(0, 0);
                                         closedir(cdir);
                                         closedir(prevdir);
                                         clrtobot();
-                                        cursor = 0;
-                                        selection = NULL;
+                                        selection[0] = NULL;
                                         continue;
                                 }
                         case 68:
                         case 'h':
-                                count = 0;
-                                for(iter = 0; iter < 100; iter++){
-                                        if(wd[iter] == '\0'){
-                                                count = iter-2;
-                                                while(wd[count] != '/' && count > 0){
-                                                        wd[count] = '\0';
-                                                        count--;
+                                j = 0;
+                                for(i = 0; i < 100; i++){
+                                        if(wd[i] == '\0'){
+                                                j = i-2;
+                                                while(wd[j] != '/' && j > 0){
+                                                        wd[j] = '\0';
+                                                        j--;
                                                 }
                                                 move(0, 0);
                                                 closedir(cdir);
                                                 closedir(prevdir);
                                                 clrtobot();
-                                                cursor = 0;
-                                                selection = NULL;
+                                                selection[0] = NULL;
                                                 break;
                                         }
                                 }
                                 continue;
-                        case 'c':
+                        case 'y':
                                 strcpy(cploc, wd);
-                                strcat(cploc, selection->d_name);
+                                strcat(cploc, selection[cursor]->d_name);
                                 move(0, 0);
                                 closedir(cdir);
                                 closedir(prevdir);
                                 clrtobot();
                                 continue;
-                        case 'v':
+                        case 'p':
                                 if(cploc != NULL){
                                         snprintf(buf, sizeof(buf), "cp %s %s", cploc, wd);
                                         system(buf);
@@ -198,59 +219,54 @@ int main(){
         return 0;
 }
 
-void displayDir(DIR *cdir, int w, int cursor){
-        int count = 0, i = 0;
-        int color;
+void displayDir(struct dirent *dir[], int w, int cursor, int size){
+        int j = 0, i = 0;
         char buf[100], ch;
-        struct dirent *dir;
-        
-        while((dir = readdir(cdir)) != NULL){
-                if(dir->d_name[0] == '.' && hideDotFiles)
-                        continue;
-                move(count+1, w);
+       
+        for(i = 0; i < size; i++){
+                move(i+1, w);
 
-                if(cursor == count){
-                        if(dir->d_type == DT_REG){
-                                while(dir->d_name[i] != '\0'){
-                                        addch(dir->d_name[i] | COLOR_PAIR(1) | A_REVERSE);
-                                        i++;
+                if(cursor == i){
+                        if(dir[i]->d_type == DT_REG){
+                                while(dir[i]->d_name[j] != '\0'){
+                                        addch(dir[i]->d_name[j] | COLOR_PAIR(1) | A_REVERSE);
+                                        j++;
                                 }
                         }
-                        else if(dir->d_type == DT_DIR){
-                                while(dir->d_name[i] != '\0'){
-                                        addch(dir->d_name[i] | COLOR_PAIR(2) | A_REVERSE);
-                                        i++;
+                        else if(dir[i]->d_type == DT_DIR){
+                                while(dir[i]->d_name[j] != '\0'){
+                                        addch(dir[i]->d_name[j] | COLOR_PAIR(2) | A_REVERSE);
+                                        j++;
                                 }
                         }
                         else{
-                                while(dir->d_name[i] != '\0'){
-                                        addch(dir->d_name[i] | A_REVERSE);
-                                        i++;
+                                while(dir[i]->d_name[j] != '\0'){
+                                        addch(dir[i]->d_name[j] | A_REVERSE);
+                                        j++;
                                 }
                         }
-                        i = 0;
+                        j = 0;
                 }
                 else{
-                        if(dir->d_type == DT_REG){
-                                while(dir->d_name[i] != '\0'){
-                                        addch(dir->d_name[i] | COLOR_PAIR(1));
-                                        i++;
+                        if(dir[i]->d_type == DT_REG){
+                                while(dir[i]->d_name[j] != '\0'){
+                                        addch(dir[i]->d_name[j] | COLOR_PAIR(1));
+                                        j++;
                                 }
                         }
-                        else if(dir->d_type == DT_DIR){
-                                while(dir->d_name[i] != '\0'){
-                                        addch(dir->d_name[i] | COLOR_PAIR(2));
-                                        i++;
+                        else if(dir[i]->d_type == DT_DIR){
+                                while(dir[i]->d_name[j] != '\0'){
+                                        addch(dir[i]->d_name[j] | COLOR_PAIR(2));
+                                        j++;
                                 }
                         }
                         else{
-                                while(dir->d_name[i] != '\0'){
-                                        addch(dir->d_name[i]);
-                                        i++;
+                                while(dir[i]->d_name[j] != '\0'){
+                                        addch(dir[i]->d_name[j]);
+                                        j++;
                                 }
                         }
-                        i = 0;
+                        j = 0;
                 }
-                count++;
         }
 }
