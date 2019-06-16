@@ -23,11 +23,13 @@ void sortDir(struct dirent *dir[], int size);
 int main(){
         int cursor = 0, count, i, j;
         char ch;
-        char buf[bufsize], prevmode[4], wd[100], chbuf[bufsize], cploc[100], mvloc[100], cpdest[100];
+        char buf[bufsize], prevmode[4], wd[100], chbuf[bufsize], cploc[100], mvloc[100], cpdest[100], message[100];
         FILE *cat;
         DIR *cdir, *prevdir, *nextdir;
         struct dirent *prev[40], *selection[40], *next[40];
         bool isDir;
+
+        cploc[0] = mvloc[0] = message[0] = '\0';
 
         getcwd(wd, sizeof(wd));
         strcat(wd, "/");
@@ -47,11 +49,17 @@ int main(){
         curs_set(0);
         getmaxyx(stdscr, h, w);
 
+        signal(SIGWINCH, resize);
+
         while(1){
                 count = 0;
                 i = 0;
                 j = 0;
 
+                move(h-1, 0);
+                addstr(message);
+
+                move(0, 0);
                 addstr(wd);
 
                 cdir = opendir(wd);
@@ -141,25 +149,22 @@ int main(){
                         case 66:
                         case 'n':
                                 cursor++;
-                                move(0, 0);
                                 closedir(cdir);
                                 closedir(prevdir);
-                                clrtobot();
+                                erase();
                                 continue;
                         case 65:
                         case 'e':
                                 cursor--;
-                                move(0, 0);
                                 closedir(cdir);
                                 closedir(prevdir);
-                                clrtobot();
+                                erase();
                                 continue;
                         case 'u':
                                 getmaxyx(stdscr, h, w);
-                                move(0, 0);
                                 closedir(cdir);
                                 closedir(prevdir);
-                                clrtobot();
+                                erase();
                                 continue;
                         case 67:
                         case 'i':
@@ -174,10 +179,9 @@ int main(){
                                         i = 0;
                                         strcat(wd, selection[cursor]->d_name);
                                         strcat(wd, "/");
-                                        move(0, 0);
                                         closedir(cdir);
                                         closedir(prevdir);
-                                        clrtobot();
+                                        erase();
                                         selection[0] = NULL;
                                         continue;
                                 }
@@ -191,10 +195,9 @@ int main(){
                                                         wd[j] = '\0';
                                                         j--;
                                                 }
-                                                move(0, 0);
                                                 closedir(cdir);
                                                 closedir(prevdir);
-                                                clrtobot();
+                                                erase();
                                                 selection[0] = NULL;
                                                 break;
                                         }
@@ -207,18 +210,20 @@ int main(){
                                         isDir = true;
                                 else
                                         isDir = false;
-                                move(0, 0);
+                                mvloc[0] = '\0';
                                 closedir(cdir);
                                 closedir(prevdir);
-                                clrtobot();
+                                erase();
+                                snprintf(message, sizeof(message), "File %s yanked for copying", selection[cursor]->d_name);
                                 continue;
                         case 'm':
                                 strcpy(mvloc, wd);
                                 strcat(mvloc, selection[cursor]->d_name);
-                                move(0, 0);
+                                cploc[0] = '\0';
                                 closedir(cdir);
                                 closedir(prevdir);
-                                clrtobot();
+                                erase();
+                                snprintf(message, sizeof(message), "File %s yanked for moving", selection[cursor]->d_name);
                                 continue;
                         case 'p':
                                 if(cploc[0] != '\0'){
@@ -228,27 +233,31 @@ int main(){
                                                 snprintf(buf, sizeof(buf), "cp %s %s", cploc, wd);
                                         system(buf);
                                         cploc[0] = '\0';
-                                        move(0, 0);
                                         closedir(cdir);
                                         closedir(prevdir);
-                                        clrtobot();
+                                        erase();
                                         continue;
                                 }
                                 else if(mvloc[0] != '\0'){
                                         snprintf(buf, sizeof(buf), "mv %s %s", mvloc, wd);
                                         system(buf);
                                         mvloc[0] = '\0';
-                                        move(0, 0);
                                         closedir(cdir);
                                         closedir(prevdir);
-                                        clrtobot();
+                                        erase();
+                                        continue;
+                                }
+                                else{
+                                        closedir(cdir);
+                                        closedir(prevdir);
+                                        erase();
+                                        strcpy(message, "No file selected");
                                         continue;
                                 }
                         default:
-                                move(0, 0);
                                 closedir(cdir);
                                 closedir(prevdir);
-                                clrtobot();
+                                erase();
                                 continue;
                 }
         }
@@ -330,4 +339,11 @@ void sortDir(struct dirent *dir[], int size){
         for(i = 0; i < size; i++){
                 dir[i] = buf[i];
         }
+}
+
+void resize(int sig){
+//        endwin();
+//
+//        refresh();
+//        clear();
 }
