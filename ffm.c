@@ -71,20 +71,24 @@ int main(){
                                 continue;
                         count++;
                 }
-                sortDir(selection, count);
-                if(cursor < 0)
-                        cursor = count-1;
-                else if(cursor >= count)
-                        cursor = 0;
+                if(selection[0] != NULL){
+                        sortDir(selection, count);
+                        if(cursor < 0)
+                                cursor = count-1;
+                        else if(cursor >= count)
+                                cursor = 0;
 
-                cdir = opendir(wd);
-                
-                if(selection[cursor]->d_type == DT_DIR)
-                        strcpy(prevmode, "dir");
-                else if(selection[cursor]->d_type == DT_REG)
-                        strcpy(prevmode, "cat");
+                        cdir = opendir(wd);
+                        
+                        if(selection[cursor]->d_type == DT_DIR)
+                                strcpy(prevmode, "dir");
+                        else if(selection[cursor]->d_type == DT_REG)
+                                strcpy(prevmode, "cat");
 
-                displayDir(selection, width, cursor, count);
+                        displayDir(selection, width, cursor, count);
+                }
+                else
+                        strcpy(prevmode, "mpt");
 
                 if(wd[1] != '\0'){
                         strcpy(buf, wd);
@@ -168,7 +172,11 @@ int main(){
                                 continue;
                         case 67:
                         case 'i':
-                                if(strcmp(prevmode, "dir") != 0){
+                                if(strcmp(prevmode, "mpt") == 0){
+                                        strcpy(message, "Folder is empty");
+                                        continue;
+                                }
+                                else if(strcmp(prevmode, "dir") != 0){
                                         strcat(wd, selection[cursor]->d_name);
                                         snprintf(buf, sizeof(buf), "xdg-open %s", wd);
                                         system(buf);
@@ -204,6 +212,10 @@ int main(){
                                 }
                                 continue;
                         case 'y':
+                                if(selection[0] == NULL){
+                                        strcpy(message, "No file selected");
+                                        continue;
+                                }
                                 strcpy(cploc, wd);
                                 strcat(cploc, selection[cursor]->d_name);
                                 if(selection[cursor]->d_type == DT_DIR)
@@ -217,6 +229,10 @@ int main(){
                                 snprintf(message, sizeof(message), "File %s yanked for copying", selection[cursor]->d_name);
                                 continue;
                         case 'm':
+                                if(selection[0] == NULL){
+                                        strcpy(message, "No file selected");
+                                        continue;
+                                }
                                 strcpy(mvloc, wd);
                                 strcat(mvloc, selection[cursor]->d_name);
                                 cploc[0] = '\0';
