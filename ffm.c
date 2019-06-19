@@ -24,8 +24,8 @@ int main(){
         int cursor = 0, count, i, j;
         char ch;
         char buf[bufsize], prevmode[4], wd[100], chbuf[bufsize], cploc[100], mvloc[100], cpdest[100], message[100];
-        FILE *cat;
-        DIR *cdir, *prevdir, *nextdir;
+        FILE *cat = NULL;
+        DIR *cdir = NULL, *prevdir = NULL, *nextdir = NULL;
         struct dirent *prev[40], *selection[40], *next[40];
         bool isDir;
 
@@ -148,6 +148,8 @@ int main(){
                 char input = getch();
                 switch(input){
                         case 'q':
+                                closedir(cdir);
+                                closedir(prevdir);
                                 endwin();
                                 exit(0);
                         case 66:
@@ -174,12 +176,16 @@ int main(){
                         case 'i':
                                 if(strcmp(prevmode, "mpt") == 0){
                                         strcpy(message, "Folder is empty");
+                                        closedir(cdir);
+                                        closedir(prevdir);
                                         continue;
                                 }
                                 else if(strcmp(prevmode, "dir") != 0){
                                         strcat(wd, selection[cursor]->d_name);
                                         snprintf(buf, sizeof(buf), "xdg-open %s", wd);
                                         system(buf);
+                                        closedir(cdir);
+                                        closedir(prevdir);
                                         endwin();
                                         exit(0);
                                 }
@@ -203,13 +209,13 @@ int main(){
                                                         wd[j] = '\0';
                                                         j--;
                                                 }
-                                                closedir(cdir);
-                                                closedir(prevdir);
                                                 erase();
                                                 selection[0] = NULL;
                                                 break;
                                         }
                                 }
+                                closedir(cdir);
+                                closedir(prevdir);
                                 continue;
                         case 'y':
                                 if(selection[0] == NULL){
@@ -336,9 +342,9 @@ void displayDir(struct dirent *dir[], int w, int cursor, int size){
 
 void sortDir(struct dirent *dir[], int size){
         struct dirent *buf[size];
-        int i, j;
+        int i = 0, j = 0;
 
-        for(i = 0; i < size; i++){
+        for(i; i < size; i++){
                 if(dir[i]->d_type == DT_DIR){
                         buf[j] = dir[i];
                         j++;
