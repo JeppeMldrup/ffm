@@ -78,6 +78,7 @@ int main(){
                         else if(cursor >= count)
                                 cursor = 0;
 
+                        closedir(cdir);
                         cdir = opendir(wd);
                         
                         if(selection[cursor]->d_type == DT_DIR)
@@ -107,6 +108,7 @@ int main(){
 
                         sortDir(prev, count);
                         displayDir(prev, 0, -1, count);
+                        closedir(prevdir);
                 }
 
                 i = 1;
@@ -143,33 +145,30 @@ int main(){
                         }
                         sortDir(next, count);
                         displayDir(next, width*2, -1, count);
+                        closedir(nextdir);
                 }
 
                 char input = getch();
                 switch(input){
                         case 'q':
                                 closedir(cdir);
-                                closedir(prevdir);
                                 endwin();
                                 exit(0);
                         case 66:
                         case 'n':
                                 cursor++;
                                 closedir(cdir);
-                                closedir(prevdir);
                                 erase();
                                 continue;
                         case 65:
                         case 'e':
                                 cursor--;
                                 closedir(cdir);
-                                closedir(prevdir);
                                 erase();
                                 continue;
                         case 'u':
                                 getmaxyx(stdscr, h, w);
                                 closedir(cdir);
-                                closedir(prevdir);
                                 erase();
                                 continue;
                         case 67:
@@ -177,7 +176,6 @@ int main(){
                                 if(strcmp(prevmode, "mpt") == 0){
                                         strcpy(message, "Folder is empty");
                                         closedir(cdir);
-                                        closedir(prevdir);
                                         continue;
                                 }
                                 else if(strcmp(prevmode, "dir") != 0){
@@ -185,7 +183,6 @@ int main(){
                                         snprintf(buf, sizeof(buf), "xdg-open %s", wd);
                                         system(buf);
                                         closedir(cdir);
-                                        closedir(prevdir);
                                         endwin();
                                         exit(0);
                                 }
@@ -194,7 +191,6 @@ int main(){
                                         strcat(wd, selection[cursor]->d_name);
                                         strcat(wd, "/");
                                         closedir(cdir);
-                                        closedir(prevdir);
                                         erase();
                                         selection[0] = NULL;
                                         continue;
@@ -215,7 +211,6 @@ int main(){
                                         }
                                 }
                                 closedir(cdir);
-                                closedir(prevdir);
                                 continue;
                         case 'y':
                                 if(selection[0] == NULL){
@@ -230,7 +225,6 @@ int main(){
                                         isDir = false;
                                 mvloc[0] = '\0';
                                 closedir(cdir);
-                                closedir(prevdir);
                                 erase();
                                 snprintf(message, sizeof(message), "File %s yanked for copying", selection[cursor]->d_name);
                                 continue;
@@ -243,7 +237,6 @@ int main(){
                                 strcat(mvloc, selection[cursor]->d_name);
                                 cploc[0] = '\0';
                                 closedir(cdir);
-                                closedir(prevdir);
                                 erase();
                                 snprintf(message, sizeof(message), "File %s yanked for moving", selection[cursor]->d_name);
                                 continue;
@@ -256,7 +249,6 @@ int main(){
                                         system(buf);
                                         cploc[0] = '\0';
                                         closedir(cdir);
-                                        closedir(prevdir);
                                         erase();
                                         continue;
                                 }
@@ -265,24 +257,23 @@ int main(){
                                         system(buf);
                                         mvloc[0] = '\0';
                                         closedir(cdir);
-                                        closedir(prevdir);
                                         erase();
                                         continue;
                                 }
                                 else{
                                         closedir(cdir);
-                                        closedir(prevdir);
                                         erase();
                                         strcpy(message, "No file selected");
                                         continue;
                                 }
                         default:
                                 closedir(cdir);
-                                closedir(prevdir);
                                 erase();
                                 continue;
                 }
         }
+        closedir(cdir);
+        closedir(prevdir);
         return 0;
 }
 
