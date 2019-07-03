@@ -9,15 +9,15 @@
 
 #define bufsize 1024
 #define namelength 50
+#define dirsize 100
 #define width 50
 #define token 30
 #define hideDotFiles true
 
 int h, w;
-bool resized = false;
-
+bool resized = false; 
 void resize(int sig);
-void displayDir(struct dirent *dir[], int w, int cursor, int size);
+void displayDir(struct dirent *dir[], int w, int cursor, int size, int h);
 void sortDir(struct dirent *dir[], int size);
 
 int main(){
@@ -26,7 +26,7 @@ int main(){
         char buf[bufsize], prevmode[4], wd[100], chbuf[bufsize], cploc[100], mvloc[100], cpdest[100], message[100];
         FILE *cat = NULL;
         DIR *cdir = NULL, *prevdir = NULL, *nextdir = NULL;
-        struct dirent *prev[40], *selection[40], *next[40];
+        struct dirent *prev[dirsize], *selection[dirsize], *next[dirsize];
         bool isDir;
 
         cploc[0] = mvloc[0] = message[0] = '\0';
@@ -62,21 +62,26 @@ int main(){
                 move(0, 0);
                 addstr(wd);
 
+                if(cdir != NULL)
+                        closedir(cdir);
+
                 cdir = opendir(wd);
                 
                 while(1){
-                        if((selection[count] = readdir(cdir)) == NULL || count > 40)
+                        if((selection[count] = readdir(cdir)) == NULL || count >= dirsize)
                                 break;
                         if(selection[count]->d_name[0] == '.' && hideDotFiles)
                                 continue;
                         count++;
                 }
+
+                if(cursor < 0)
+                        cursor = count-1;
+                else if(cursor >= count)
+                        cursor = 0;
+                
                 if(selection[0] != NULL){
                         sortDir(selection, count);
-                        if(cursor < 0)
-                                cursor = count-1;
-                        else if(cursor >= count)
-                                cursor = 0;
 
                         closedir(cdir);
                         cdir = opendir(wd);
@@ -86,7 +91,7 @@ int main(){
                         else if(selection[cursor]->d_type == DT_REG)
                                 strcpy(prevmode, "cat");
 
-                        displayDir(selection, width, cursor, count);
+                        displayDir(selection, (int)w/4, cursor, count, h);
                 }
                 else
                         strcpy(prevmode, "mpt");
@@ -99,16 +104,17 @@ int main(){
                         
                         count = 0;
                         while(1){
-                                if((prev[count] = readdir(prevdir)) == NULL || count > 40)
+                                if((prev[count] = readdir(prevdir)) == NULL || count >= dirsize)
                                         break;
                                 if(prev[count]->d_name[0] == '.' && hideDotFiles)
                                         continue;
                                 count++;
                         }
-
-                        sortDir(prev, count);
-                        displayDir(prev, 0, -1, count);
-                        closedir(prevdir);
+                        if(prev[0] != NULL){
+                                sortDir(prev, count);
+                                displayDir(prev, 0, -1, count, h);
+                                closedir(prevdir);
+                        }
                 }
 
                 i = 1;
@@ -137,52 +143,48 @@ int main(){
                         nextdir = opendir(buf);
                         count = 0;
                         while(1){
-                                if((next[count] = readdir(nextdir)) == NULL || count > 40)
+                                if((next[count] = readdir(nextdir)) == NULL || count >= dirsize)
                                         break;
                                 if(next[count]->d_name[0] == '.' && hideDotFiles)
                                         continue;
                                 count++;
                         }
-                        sortDir(next, count);
-                        displayDir(next, width*2, -1, count);
-                        closedir(nextdir);
+                        if(next[0] != NULL){
+                                sortDir(next, count);
+                                displayDir(next, (int)w/2, -1, count, h);
+                                closedir(nextdir);
+                        }
                 }
 
                 char input = getch();
                 switch(input){
                         case 'q':
-                                closedir(cdir);
                                 endwin();
                                 exit(0);
                         case 66:
                         case 'n':
                                 cursor++;
-                                closedir(cdir);
                                 erase();
                                 continue;
                         case 65:
                         case 'e':
                                 cursor--;
-                                closedir(cdir);
                                 erase();
                                 continue;
                         case 'u':
                                 getmaxyx(stdscr, h, w);
-                                closedir(cdir);
                                 erase();
                                 continue;
                         case 67:
                         case 'i':
                                 if(strcmp(prevmode, "mpt") == 0){
                                         strcpy(message, "Folder is empty");
-                                        closedir(cdir);
                                         continue;
                                 }
                                 else if(strcmp(prevmode, "dir") != 0){
                                         strcat(wd, selection[cursor]->d_name);
-                                        snprintf(buf, sizeof(buf), "xdg-open %s", wd);
+                                        snprintf(buf, bufsize, "xdg-open %s", wd);
                                         system(buf);
-                                        closedir(cdir);
                                         endwin();
                                         exit(0);
                                 }
@@ -190,7 +192,6 @@ int main(){
                                         i = 0;
                                         strcat(wd, selection[cursor]->d_name);
                                         strcat(wd, "/");
-                                        closedir(cdir);
                                         erase();
                                         selection[0] = NULL;
                                         continue;
@@ -210,7 +211,6 @@ int main(){
                                                 break;
                                         }
                                 }
-                                closedir(cdir);
                                 continue;
                         case 'y':
                                 if(selection[0] == NULL){
@@ -224,7 +224,6 @@ int main(){
                                 else
                                         isDir = false;
                                 mvloc[0] = '\0';
-                                closedir(cdir);
                                 erase();
                                 snprintf(message, sizeof(message), "File %s yanked for copying", selection[cursor]->d_name);
                                 continue;
@@ -236,54 +235,53 @@ int main(){
                                 strcpy(mvloc, wd);
                                 strcat(mvloc, selection[cursor]->d_name);
                                 cploc[0] = '\0';
-                                closedir(cdir);
                                 erase();
                                 snprintf(message, sizeof(message), "File %s yanked for moving", selection[cursor]->d_name);
                                 continue;
                         case 'p':
                                 if(cploc[0] != '\0'){
                                         if(isDir)
-                                                snprintf(buf, sizeof(buf), "cp -r %s %s", cploc, wd);
+                                                snprintf(buf, bufsize, "cp -r %s %s", cploc, wd);
                                         else
-                                                snprintf(buf, sizeof(buf), "cp %s %s", cploc, wd);
+                                                snprintf(buf, bufsize, "cp %s %s", cploc, wd);
                                         system(buf);
                                         cploc[0] = '\0';
-                                        closedir(cdir);
                                         erase();
                                         continue;
                                 }
                                 else if(mvloc[0] != '\0'){
-                                        snprintf(buf, sizeof(buf), "mv %s %s", mvloc, wd);
+                                        snprintf(buf, bufsize, "mv %s %s", mvloc, wd);
                                         system(buf);
                                         mvloc[0] = '\0';
-                                        closedir(cdir);
                                         erase();
                                         continue;
                                 }
                                 else{
-                                        closedir(cdir);
                                         erase();
                                         strcpy(message, "No file selected");
                                         continue;
                                 }
                         default:
-                                closedir(cdir);
                                 erase();
                                 continue;
                 }
         }
-        closedir(cdir);
-        closedir(prevdir);
+
         return 0;
 }
 
-void displayDir(struct dirent *dir[], int w, int cursor, int size){
+void displayDir(struct dirent *dir[], int w, int cursor, int size, int h){
         int j = 0, i = 0;
-        char buf[100], ch;
-       
-        for(i = 0; i < size; i++){
-                move(i+1, w);
+        int offset = cursor - (h)/2 - 1;
 
+        if(offset < 0 || size < (h-2))
+                offset = 0;
+
+        for(i = offset; i < size; i++){
+                move(i-offset+1, w);
+
+                if(dir[i] == NULL || i-offset+1 > h-1)
+                        break;
                 if(cursor == i){
                         if(dir[i]->d_type == DT_REG){
                                 while(dir[i]->d_name[j] != '\0'){
