@@ -62,9 +62,11 @@ int main(){
                 move(0, 0);
                 addstr(wd);
 
-                cdir = opendir(wd);
-                
+		cdir = opendir(wd);
+
                 while(1){
+			if(cdir == NULL)
+				break;
                         if((selection[count] = readdir(cdir)) == NULL || count >= dirsize)
                                 break;
                         if(selection[count]->d_name[0] == '.' && hideDotFiles)
@@ -96,7 +98,8 @@ int main(){
                         strcpy(buf, wd);
                         strcat(buf, "/..");
 
-                        prevdir = opendir(buf);
+                        if((prevdir = opendir(buf)) == NULL)
+				break;
                         
                         count = 0;
                         while(1){
@@ -110,6 +113,7 @@ int main(){
                                 sortDir(prev, count);
                                 displayDir(prev, 0, -1, count, h);
                         }
+			closedir(prevdir);
                 }
 
                 i = 1;
@@ -117,7 +121,8 @@ int main(){
                 if(strcmp(prevmode, "cat") == 0){
                         strcpy(buf, wd);
                         strcat(buf, selection[cursor]->d_name);
-                        cat = fopen(buf, "r");
+                        if((cat = fopen(buf, "r")) == NULL)
+				break;
                         while((ch = fgetc(cat)) != EOF){
                                 if(i >= h-1)
                                         break;
@@ -135,7 +140,8 @@ int main(){
                         strcpy(buf, wd);
                         strcat(buf, selection[cursor]->d_name);
                         strcat(buf, "/");
-                        nextdir = opendir(buf);
+                        if((nextdir = opendir(buf)) == NULL)
+				break;
                         count = 0;
                         while(1){
                                 if((next[count] = readdir(nextdir)) == NULL || count >= dirsize)
@@ -148,11 +154,11 @@ int main(){
                                 sortDir(next, count);
                                 displayDir(next, (int)w/2, -1, count, h);
                         }
+			closedir(nextdir);
                 }
 
-                closedir(cdir);
-                closedir(prevdir);
-                closedir(nextdir);
+		if(cdir != NULL)
+			closedir(cdir);
 
                 char input = getch();
                 switch(input){
