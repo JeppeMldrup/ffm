@@ -23,7 +23,7 @@ void sortDir(struct dirent *dir[], int size);
 int main(){
         int cursor = 0, count, i, j;
         char ch;
-        char buf[bufsize], prevmode[4], wd[100], chbuf[bufsize], cploc[100], mvloc[100], cpdest[100], message[100];
+        char buf[bufsize], prevmode[4], wd[bufsize], chbuf[bufsize], cploc[100], mvloc[100], cpdest[100], message[100];
         FILE *cat = NULL;
         DIR *cdir = NULL, *prevdir = NULL, *nextdir = NULL;
         struct dirent *prev[dirsize], *selection[dirsize], *next[dirsize];
@@ -62,9 +62,6 @@ int main(){
                 move(0, 0);
                 addstr(wd);
 
-                if(cdir != NULL)
-                        closedir(cdir);
-
                 cdir = opendir(wd);
                 
                 while(1){
@@ -83,8 +80,7 @@ int main(){
                 if(selection[0] != NULL){
                         sortDir(selection, count);
 
-                        closedir(cdir);
-                        cdir = opendir(wd);
+                        rewinddir(cdir);
                         
                         if(selection[cursor]->d_type == DT_DIR)
                                 strcpy(prevmode, "dir");
@@ -113,7 +109,6 @@ int main(){
                         if(prev[0] != NULL){
                                 sortDir(prev, count);
                                 displayDir(prev, 0, -1, count, h);
-                                closedir(prevdir);
                         }
                 }
 
@@ -152,9 +147,12 @@ int main(){
                         if(next[0] != NULL){
                                 sortDir(next, count);
                                 displayDir(next, (int)w/2, -1, count, h);
-                                closedir(nextdir);
                         }
                 }
+
+                closedir(cdir);
+                closedir(prevdir);
+                closedir(nextdir);
 
                 char input = getch();
                 switch(input){
@@ -189,7 +187,6 @@ int main(){
                                         exit(0);
                                 }
                                 else{
-                                        i = 0;
                                         strcat(wd, selection[cursor]->d_name);
                                         strcat(wd, "/");
                                         erase();
@@ -199,7 +196,7 @@ int main(){
                         case 68:
                         case 'h':
                                 j = 0;
-                                for(i = 0; i < 100; i++){
+                                for(i = 0; i < bufsize; i++){
                                         if(wd[i] == '\0'){
                                                 j = i-2;
                                                 while(wd[j] != '/' && j > 0){
@@ -267,17 +264,18 @@ int main(){
                 }
         }
 
-        return 0;
+        exit(0);
 }
 
 void displayDir(struct dirent *dir[], int w, int cursor, int size, int h){
-        int j = 0, i = 0;
+        int j, i;
         int offset = cursor - (h)/2 - 1;
 
         if(offset < 0 || size < (h-2))
                 offset = 0;
 
         for(i = offset; i < size; i++){
+                j = 0;
                 move(i-offset+1, w);
 
                 if(dir[i] == NULL || i-offset+1 > h-1)
@@ -302,7 +300,6 @@ void displayDir(struct dirent *dir[], int w, int cursor, int size, int h){
                                         j++;
                                 }
                         }
-                        j = 0;
                 }
                 else{
                         if(dir[i]->d_type == DT_REG){
@@ -324,7 +321,6 @@ void displayDir(struct dirent *dir[], int w, int cursor, int size, int h){
                                         j++;
                                 }
                         }
-                        j = 0;
                 }
         }
 }
