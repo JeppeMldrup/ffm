@@ -26,7 +26,7 @@ It is possible to copy both files and directories
 To move files like with copy/pasting simply move to the file and press `m`, then move to the desired destination and press `p`  
 It is only possible to move files
 
-**Toggle Dotfiles**
+**Toggle Dotfiles**  
 To toggle dotfiles on and off simply press the period `.` key on your keyboard
 
 **Exiting**  
