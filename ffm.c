@@ -12,10 +12,12 @@
 #define dirsize 100
 #define width 50
 #define token 30
-#define hideDotFiles true
+
+volatile bool hideDotFiles = true;
 
 int h, w;
 bool resized = false; 
+
 void resize(int sig);
 void displayDir(struct dirent *dir[], int w, int cursor, int size, int h);
 void sortDir(struct dirent *dir[], int size);
@@ -56,9 +58,6 @@ int main(){
                 i = 0;
                 j = 0;
 
-                move(h-1, 0);
-                addstr(message);
-
                 move(0, 0);
                 addstr(wd);
 
@@ -94,13 +93,9 @@ int main(){
                 else
                         strcpy(prevmode, "mpt");
 
-                if(wd[1] != '\0'){
-                        strcpy(buf, wd);
-                        strcat(buf, "/..");
-
-                        if((prevdir = opendir(buf)) == NULL)
-				break;
-                        
+		strcpy(buf, wd);
+		strcat(buf, "..");
+                if(wd[1] != '\0' && (prevdir = opendir(buf)) != NULL){
                         count = 0;
                         while(1){
                                 if((prev[count] = readdir(prevdir)) == NULL || count >= dirsize)
@@ -118,10 +113,14 @@ int main(){
 
                 i = 1;
                 j = width*2;
-                if(strcmp(prevmode, "cat") == 0){
-                        strcpy(buf, wd);
-                        strcat(buf, selection[cursor]->d_name);
-                        if((cat = fopen(buf, "r")) == NULL)
+		strcpy(buf, wd);
+		strcat(buf, selection[cursor]->d_name);
+		if(access(buf, R_OK) < 0){
+			strcpy(message, "File is not readable");
+			strcpy(prevmode, "mpt");
+		}
+		else if(strcmp(prevmode, "cat") == 0){
+			if((cat = fopen(buf, "r")) == NULL)
 				break;
                         while((ch = fgetc(cat)) != EOF){
                                 if(i >= h-1)
@@ -137,10 +136,7 @@ int main(){
                         }
                 }
                 else if(strcmp(prevmode, "dir") == 0){
-                        strcpy(buf, wd);
-                        strcat(buf, selection[cursor]->d_name);
-                        strcat(buf, "/");
-                        if((nextdir = opendir(buf)) == NULL)
+			if((nextdir = opendir(buf)) == NULL)
 				break;
                         count = 0;
                         while(1){
@@ -156,6 +152,9 @@ int main(){
                         }
 			closedir(nextdir);
                 }
+
+                move(h-1, 0);
+                addstr(message);
 
 		if(cdir != NULL)
 			closedir(cdir);
@@ -202,6 +201,10 @@ int main(){
                         case 68:
                         case 'h':
                                 j = 0;
+				if(wd[1] == '\0'){
+					strcpy(message, "At root directory\0");
+					continue;
+				}
                                 for(i = 0; i < bufsize; i++){
                                         if(wd[i] == '\0'){
                                                 j = i-2;
@@ -264,6 +267,10 @@ int main(){
                                         strcpy(message, "No file selected");
                                         continue;
                                 }
+			case '.':
+				hideDotFiles = !hideDotFiles;
+				erase();
+				continue;
                         default:
                                 erase();
                                 continue;
