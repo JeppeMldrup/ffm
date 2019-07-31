@@ -21,6 +21,7 @@ bool resized = false;
 void resize(int sig);
 void displayDir(struct dirent *dir[], int w, int cursor, int size, int h);
 void sortDir(struct dirent *dir[], int size);
+void prevDir(char *wd);
 
 int main(){
         int cursor = 0, count, i, j;
@@ -127,7 +128,7 @@ int main(){
                                         break;
                                 if(ch == '\n' || j >= w-1){
                                         i++;
-                                        j = width*2;
+                                        j = (int)w/2;
                                         continue;
                                 }
                                 move(i, j);
@@ -150,6 +151,8 @@ int main(){
                                 sortDir(next, count);
                                 displayDir(next, (int)w/2, -1, count, h);
                         }
+			else
+				strcpy(prevmode, "mpt");
 			closedir(nextdir);
                 }
 
@@ -205,18 +208,8 @@ int main(){
 					strcpy(message, "At root directory\0");
 					continue;
 				}
-                                for(i = 0; i < bufsize; i++){
-                                        if(wd[i] == '\0'){
-                                                j = i-2;
-                                                while(wd[j] != '/' && j > 0){
-                                                        wd[j] = '\0';
-                                                        j--;
-                                                }
-                                                erase();
-                                                selection[0] = NULL;
-                                                break;
-                                        }
-                                }
+				prevDir(wd);
+				selection[0] = NULL;
                                 continue;
                         case 'y':
                                 if(selection[0] == NULL){
@@ -294,46 +287,40 @@ void displayDir(struct dirent *dir[], int w, int cursor, int size, int h){
                 if(dir[i] == NULL || i-offset+1 > h-1)
                         break;
                 if(cursor == i){
-                        if(dir[i]->d_type == DT_REG){
-                                while(dir[i]->d_name[j] != '\0'){
-                                        addch(dir[i]->d_name[j] | COLOR_PAIR(1) | A_REVERSE);
-                                        j++;
-                                }
-                        }
-                        else if(dir[i]->d_type == DT_DIR){
-                                while(dir[i]->d_name[j] != '\0'){
-                                        addch(dir[i]->d_name[j] | COLOR_PAIR(2) | A_REVERSE);
-                                        j++;
-                                }
-                                addch('/' | COLOR_PAIR(2) | A_REVERSE);
-                        }
-                        else{
-                                while(dir[i]->d_name[j] != '\0'){
-                                        addch(dir[i]->d_name[j] | A_REVERSE);
-                                        j++;
-                                }
-                        }
-                }
+                        switch(dir[i]->d_type){
+				case DT_REG:
+					attron(COLOR_PAIR(1) | A_REVERSE);
+					addstr(dir[i]->d_name);
+					attroff(COLOR_PAIR(1) | A_REVERSE);
+					continue;
+				case DT_DIR:
+					attron(COLOR_PAIR(2) | A_REVERSE);
+					addstr(dir[i]->d_name);
+					addch('/');
+					attroff(COLOR_PAIR(2) | A_REVERSE);
+					continue;
+				default:
+					attron(A_REVERSE);
+					addstr(dir[i]->d_name);
+					attroff(A_REVERSE);
+			}
+		}
                 else{
-                        if(dir[i]->d_type == DT_REG){
-                                while(dir[i]->d_name[j] != '\0'){
-                                        addch(dir[i]->d_name[j] | COLOR_PAIR(1));
-                                        j++;
-                                }
-                        }
-                        else if(dir[i]->d_type == DT_DIR){
-                                while(dir[i]->d_name[j] != '\0'){
-                                        addch(dir[i]->d_name[j] | COLOR_PAIR(2));
-                                        j++;
-                                }
-                                addch('/' | COLOR_PAIR(2));
-                        }
-                        else{
-                                while(dir[i]->d_name[j] != '\0'){
-                                        addch(dir[i]->d_name[j]);
-                                        j++;
-                                }
-                        }
+                        switch(dir[i]->d_type){
+				case DT_REG:
+					attron(COLOR_PAIR(1));
+					addstr(dir[i]->d_name);
+					attroff(COLOR_PAIR(1));
+					continue;
+				case DT_DIR:
+					attron(COLOR_PAIR(2));
+					addstr(dir[i]->d_name);
+					addch('/');
+					attroff(COLOR_PAIR(2));
+					continue;
+				default:
+					addstr(dir[i]->d_name);
+			}
                 }
         }
 }
@@ -366,4 +353,19 @@ void resize(int sig){
 //
 //        refresh();
 //        clear();
+}
+
+void prevDir(char *wd){
+	int i = 0, j = 0;
+	for(i; i < bufsize; i++){
+		if(wd[i] == '\0'){
+			j = i-2;
+			while(wd[j] != '/' && j > 0){
+				wd[j] = '\0';
+				j--;
+			}
+			erase();
+			break;
+		}
+	}
 }
