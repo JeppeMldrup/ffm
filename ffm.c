@@ -22,6 +22,7 @@ void resize(int sig);
 void displayDir(struct dirent *dir[], int w, int cursor, int size, int h);
 void sortDir(struct dirent *dir[], int size);
 void prevDir(char *wd);
+void sendMessage(char *message);
 
 int main(){
         int cursor = 0, count, i, j;
@@ -113,11 +114,12 @@ int main(){
                 }
 
                 i = 1;
-                j = width*2;
+                j = (int)w/2;
 		strcpy(buf, wd);
 		strcat(buf, selection[cursor]->d_name);
 		if(access(buf, R_OK) < 0){
 			strcpy(message, "File is not readable");
+			sendMessage(message);
 			strcpy(prevmode, "mpt");
 		}
 		else if(strcmp(prevmode, "cat") == 0){
@@ -156,9 +158,6 @@ int main(){
 			closedir(nextdir);
                 }
 
-                move(h-1, 0);
-                addstr(message);
-
 		if(cdir != NULL)
 			closedir(cdir);
 
@@ -185,6 +184,7 @@ int main(){
                         case 'i':
                                 if(strcmp(prevmode, "mpt") == 0){
                                         strcpy(message, "Folder is empty");
+					sendMessage(message);
                                         continue;
                                 }
                                 else if(strcmp(prevmode, "dir") != 0){
@@ -206,6 +206,7 @@ int main(){
                                 j = 0;
 				if(wd[1] == '\0'){
 					strcpy(message, "At root directory\0");
+					sendMessage(message);
 					continue;
 				}
 				prevDir(wd);
@@ -214,6 +215,7 @@ int main(){
                         case 'y':
                                 if(selection[0] == NULL){
                                         strcpy(message, "No file selected");
+					sendMessage(message);
                                         continue;
                                 }
                                 strcpy(cploc, wd);
@@ -225,10 +227,12 @@ int main(){
                                 mvloc[0] = '\0';
                                 erase();
                                 snprintf(message, sizeof(message), "File %s yanked for copying", selection[cursor]->d_name);
+				sendMessage(message);
                                 continue;
                         case 'm':
                                 if(selection[0] == NULL){
                                         strcpy(message, "No file selected");
+					sendMessage(message);
                                         continue;
                                 }
                                 strcpy(mvloc, wd);
@@ -236,6 +240,7 @@ int main(){
                                 cploc[0] = '\0';
                                 erase();
                                 snprintf(message, sizeof(message), "File %s yanked for moving", selection[cursor]->d_name);
+				sendMessage(message);
                                 continue;
                         case 'p':
                                 if(cploc[0] != '\0'){
@@ -258,6 +263,7 @@ int main(){
                                 else{
                                         erase();
                                         strcpy(message, "No file selected");
+					sendMessage(message);
                                         continue;
                                 }
 			case '.':
@@ -274,7 +280,7 @@ int main(){
 }
 
 void displayDir(struct dirent *dir[], int w, int cursor, int size, int h){
-        int j, i;
+        int j, i, color;
         int offset = cursor - (h)/2 - 1;
 
         if(offset < 0 || size < (h-2))
@@ -368,4 +374,9 @@ void prevDir(char *wd){
 			break;
 		}
 	}
+}
+
+void sendMessage(char *message){
+	move(h-1, 0);
+	addstr(message);
 }
