@@ -29,5 +29,9 @@ It is only possible to move files
 **Toggle Dotfiles**  
 To toggle dotfiles on and off simply press the period `.` key on your keyboard
 
+**Search**  
+To start searching press the `/` key, then type your query.  
+Once you have typed what you want to search hit enter to enter search mode, where you can scroll through the search entries with `n`
+
 **Exiting**  
 To exit out of the program simply press `q`

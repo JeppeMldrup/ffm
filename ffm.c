@@ -25,15 +25,15 @@ void prevDir(char *wd);
 void sendMessage(char *message);
 
 int main(){
-        int cursor = 0, count, i, j;
+        int cursor = 0, count, i, j, match[dirsize], matchcursor = 0, matchcount;
         char ch;
-        char buf[bufsize], prevmode[4], wd[bufsize], chbuf[bufsize], cploc[100], mvloc[100], cpdest[100], message[100];
+        char buf[bufsize], prevmode[4], wd[bufsize], chbuf[bufsize], cploc[100], mvloc[100], cpdest[100], message[100], locate[100];
         FILE *cat = NULL;
         DIR *cdir = NULL, *prevdir = NULL, *nextdir = NULL;
         struct dirent *prev[dirsize], *selection[dirsize], *next[dirsize];
-        bool isDir;
+        bool isDir, typing = false, searching = false;
 
-        cploc[0] = mvloc[0] = message[0] = '\0';
+        cploc[0] = mvloc[0] = message[0] = locate[0] = '\0';
 
         getcwd(wd, sizeof(wd));
         strcat(wd, "/");
@@ -41,6 +41,7 @@ int main(){
         initscr();
         noecho();
         start_color();
+	keypad(stdscr, true);
 
         attron(A_BOLD);
 
@@ -161,17 +162,83 @@ int main(){
 		if(cdir != NULL)
 			closedir(cdir);
 
+		if(typing == true){
+			count = 0;
+			i = 0;
+			while(1){
+				if(selection[count] == NULL)
+					break;
+				else if(strstr(selection[count]->d_name, locate) != NULL){
+					size_t size = strcspn(selection[count]->d_name, locate);
+					move(count+1, (int)w/4+(int)size);
+					attron(A_REVERSE);
+					addstr(locate);
+					attroff(A_REVERSE);
+					match[i] = count;
+					i++;
+				}
+				count++;
+			}
+			matchcount = i;
+			snprintf(message, sizeof(message), "%i matches found", i);
+			sendMessage(message);
+
+			ch = getch();
+			if(ch == (char)KEY_BACKSPACE)
+				locate[strlen(locate)-1] = '\0';
+			else if(ch == 10){
+				cursor = match[0];
+				typing = false;
+				searching = true;
+				locate[0] = '\0';
+				erase();
+				continue;
+			}
+			else if(ch >= 32 && ch <= 126)
+				strcat(locate, &ch);
+			else{
+				typing = false;
+				locate[0] = '\0';
+				strcpy(message, "other");
+				sendMessage(message);
+				continue;
+			}
+
+			erase();
+			move(h-1, (int)w/2);
+			addstr(locate);
+			continue;
+		}
+
+		if(searching == true){
+			ch = getch();
+			if(ch == 'n'){
+				matchcursor++;
+				if(matchcursor >= matchcount)
+					matchcursor = 0;
+			}
+			else
+			{
+				searching = false;
+			}
+			cursor = match[matchcursor];
+			snprintf(message, sizeof(message), "%i of %i", matchcursor+1, matchcount);
+			erase();
+			sendMessage(message);
+			continue;
+		}
+
                 char input = getch();
                 switch(input){
                         case 'q':
                                 endwin();
                                 exit(0);
-                        case 66:
+                        case (char)KEY_DOWN:
                         case 'n':
                                 cursor++;
                                 erase();
                                 continue;
-                        case 65:
+                        case (char)KEY_UP:
                         case 'e':
                                 cursor--;
                                 erase();
@@ -180,7 +247,7 @@ int main(){
                                 getmaxyx(stdscr, h, w);
                                 erase();
                                 continue;
-                        case 67:
+                        case (char)KEY_RIGHT:
                         case 'i':
                                 if(strcmp(prevmode, "mpt") == 0){
                                         strcpy(message, "Folder is empty");
@@ -201,7 +268,7 @@ int main(){
                                         selection[0] = NULL;
                                         continue;
                                 }
-                        case 68:
+                        case (char)KEY_LEFT:
                         case 'h':
                                 j = 0;
 				if(wd[1] == '\0'){
@@ -268,6 +335,25 @@ int main(){
                                 }
 			case '.':
 				hideDotFiles = !hideDotFiles;
+				erase();
+				continue;
+			case 'g':
+				input = getch();
+				if(input == 'g')
+					cursor = 0;
+				erase();
+				continue;
+			case 'G':
+				for(i = 0; i < bufsize; i++){
+					if(selection[i] == NULL){
+						cursor = i-1;
+						break;
+					}
+				}
+				erase();
+				continue;
+			case '/':
+				typing = true;
 				erase();
 				continue;
                         default:
