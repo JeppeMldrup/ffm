@@ -22,11 +22,11 @@ void resize(int sig);
 void displayDir(struct dirent *dir[], int w, int cursor, int size, int h);
 void sortDir(struct dirent *dir[], int size);
 void prevDir(char *wd);
-void sendMessage(char *message);
+void sendMessage(char *message, bool show);
 
 int main(){
         int cursor = 0, count, i, j, match[dirsize], matchcursor = 0, matchcount;
-        char ch;
+        char ch, input;
         char buf[bufsize], prevmode[4], wd[bufsize], chbuf[bufsize], cploc[100], mvloc[100], cpdest[100], message[100], locate[100];
         FILE *cat = NULL;
         DIR *cdir = NULL, *prevdir = NULL, *nextdir = NULL;
@@ -120,7 +120,7 @@ int main(){
 		strcat(buf, selection[cursor]->d_name);
 		if(access(buf, R_OK) < 0){
 			strcpy(message, "File is not readable");
-			sendMessage(message);
+			sendMessage(message, !searching);
 			strcpy(prevmode, "mpt");
 		}
 		else if(strcmp(prevmode, "cat") == 0){
@@ -181,7 +181,7 @@ int main(){
 			}
 			matchcount = i;
 			snprintf(message, sizeof(message), "%i matches found", i);
-			sendMessage(message);
+			sendMessage(message, !searching);
 
 			ch = getch();
 			if(ch == (char)KEY_BACKSPACE)
@@ -192,6 +192,8 @@ int main(){
 				searching = true;
 				locate[0] = '\0';
 				erase();
+				snprintf(message, sizeof(message), "1 of %i", matchcount);
+				sendMessage(message, true);
 				continue;
 			}
 			else if(ch >= 32 && ch <= 126)
@@ -199,8 +201,6 @@ int main(){
 			else{
 				typing = false;
 				locate[0] = '\0';
-				strcpy(message, "other");
-				sendMessage(message);
 				continue;
 			}
 
@@ -210,36 +210,31 @@ int main(){
 			continue;
 		}
 
-		if(searching == true){
-			ch = getch();
-			if(ch == 'n'){
-				matchcursor++;
-				if(matchcursor >= matchcount)
-					matchcursor = 0;
-			}
-			else
-			{
-				searching = false;
-			}
-			cursor = match[matchcursor];
-			snprintf(message, sizeof(message), "%i of %i", matchcursor+1, matchcount);
-			erase();
-			sendMessage(message);
-			continue;
-		}
-
-                char input = getch();
+                input = getch();
                 switch(input){
+			case 'n':
+				if(searching){
+					matchcursor++;
+					if(matchcursor >= matchcount)
+						matchcursor = 0;
+					cursor = match[matchcursor];
+					snprintf(message, sizeof(message), "%i of %i", matchcursor+1, matchcount);
+					erase();
+					sendMessage(message, true);
+					continue;
+				}
+				erase();
+				continue;
                         case 'q':
                                 endwin();
                                 exit(0);
                         case (char)KEY_DOWN:
-                        case 'n':
+                        case 'j':
                                 cursor++;
                                 erase();
                                 continue;
                         case (char)KEY_UP:
-                        case 'e':
+                        case 'k':
                                 cursor--;
                                 erase();
                                 continue;
@@ -248,10 +243,11 @@ int main(){
                                 erase();
                                 continue;
                         case (char)KEY_RIGHT:
-                        case 'i':
+                        case 'l':
+				searching = false;
                                 if(strcmp(prevmode, "mpt") == 0){
                                         strcpy(message, "Folder is empty");
-					sendMessage(message);
+					sendMessage(message, true);
                                         continue;
                                 }
                                 else if(strcmp(prevmode, "dir") != 0){
@@ -270,10 +266,11 @@ int main(){
                                 }
                         case (char)KEY_LEFT:
                         case 'h':
+				searching = false;
                                 j = 0;
 				if(wd[1] == '\0'){
 					strcpy(message, "At root directory\0");
-					sendMessage(message);
+					sendMessage(message, true);
 					continue;
 				}
 				prevDir(wd);
@@ -282,7 +279,7 @@ int main(){
                         case 'y':
                                 if(selection[0] == NULL){
                                         strcpy(message, "No file selected");
-					sendMessage(message);
+					sendMessage(message, true);
                                         continue;
                                 }
                                 strcpy(cploc, wd);
@@ -294,12 +291,12 @@ int main(){
                                 mvloc[0] = '\0';
                                 erase();
                                 snprintf(message, sizeof(message), "File %s yanked for copying", selection[cursor]->d_name);
-				sendMessage(message);
+				sendMessage(message, true);
                                 continue;
                         case 'm':
                                 if(selection[0] == NULL){
                                         strcpy(message, "No file selected");
-					sendMessage(message);
+					sendMessage(message, true);
                                         continue;
                                 }
                                 strcpy(mvloc, wd);
@@ -307,7 +304,7 @@ int main(){
                                 cploc[0] = '\0';
                                 erase();
                                 snprintf(message, sizeof(message), "File %s yanked for moving", selection[cursor]->d_name);
-				sendMessage(message);
+				sendMessage(message, true);
                                 continue;
                         case 'p':
                                 if(cploc[0] != '\0'){
@@ -330,7 +327,7 @@ int main(){
                                 else{
                                         erase();
                                         strcpy(message, "No file selected");
-					sendMessage(message);
+					sendMessage(message, true);
                                         continue;
                                 }
 			case '.':
@@ -462,7 +459,9 @@ void prevDir(char *wd){
 	}
 }
 
-void sendMessage(char *message){
+void sendMessage(char *message, bool show){
+	if(!show)
+		return;
 	move(h-1, 0);
 	addstr(message);
 }
