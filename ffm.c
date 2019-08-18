@@ -23,6 +23,7 @@ void displayDir(struct dirent *dir[], int w, int cursor, int size, int h);
 void sortDir(struct dirent *dir[], int size);
 void prevDir(char *wd);
 void sendMessage(char *message, bool show);
+int getDir(struct dirent *ddir[], DIR *dir);
 
 int main(){
         int cursor = 0, count, i, j, match[dirsize], matchcursor = 0, matchcount;
@@ -57,7 +58,6 @@ int main(){
         signal(SIGWINCH, resize);
 
         while(1){
-                count = 0;
                 i = 0;
                 j = 0;
 
@@ -65,16 +65,7 @@ int main(){
                 addstr(wd);
 
 		cdir = opendir(wd);
-
-                while(1){
-			if(cdir == NULL)
-				break;
-                        if((selection[count] = readdir(cdir)) == NULL || count >= dirsize)
-                                break;
-                        if(selection[count]->d_name[0] == '.' && hideDotFiles)
-                                continue;
-                        count++;
-                }
+		count = getDir(selection, cdir);
 
                 if(cursor < 0)
                         cursor = count-1;
@@ -93,20 +84,15 @@ int main(){
 
                         displayDir(selection, (int)w/4, cursor, count, h);
                 }
-                else
+                else{
+			printf("empty");
                         strcpy(prevmode, "mpt");
+		}
 
 		strcpy(buf, wd);
 		strcat(buf, "..");
                 if(wd[1] != '\0' && (prevdir = opendir(buf)) != NULL){
-                        count = 0;
-                        while(1){
-                                if((prev[count] = readdir(prevdir)) == NULL || count >= dirsize)
-                                        break;
-                                if(prev[count]->d_name[0] == '.' && hideDotFiles)
-                                        continue;
-                                count++;
-                        }
+			count = getDir(prev, prevdir);
                         if(prev[0] != NULL){
                                 sortDir(prev, count);
                                 displayDir(prev, 0, -1, count, h);
@@ -142,14 +128,7 @@ int main(){
                 else if(strcmp(prevmode, "dir") == 0){
 			if((nextdir = opendir(buf)) == NULL)
 				break;
-                        count = 0;
-                        while(1){
-                                if((next[count] = readdir(nextdir)) == NULL || count >= dirsize)
-                                        break;
-                                if(next[count]->d_name[0] == '.' && hideDotFiles)
-                                        continue;
-                                count++;
-                        }
+			count = getDir(next, nextdir);
                         if(next[0] != NULL){
                                 sortDir(next, count);
                                 displayDir(next, (int)w/2, -1, count, h);
@@ -464,4 +443,18 @@ void sendMessage(char *message, bool show){
 		return;
 	move(h-1, 0);
 	addstr(message);
+}
+
+int getDir(struct dirent *ddir[], DIR *dir){
+                int count = 0;
+                while(1){
+			if(dir == NULL)
+				break;
+                        if((ddir[count] = readdir(dir)) == NULL || count >= dirsize)
+                                break;
+                        if(ddir[count]->d_name[0] == '.' && hideDotFiles)
+                                continue;
+                        count++;
+                }
+		return count;
 }
