@@ -115,10 +115,16 @@ int main(){
                         while((ch = fgetc(cat)) != EOF){
                                 if(i >= h-1)
                                         break;
-                                if(ch == '\n' || j >= w-1){
+                                if(ch == '\n'){
+					i++;
+					j = (int)w/2;
+				}
+				else if(j >= w-3){
+					move(i, j);
+					addch('>' | COLOR_PAIR(1));
+					addch('>' | COLOR_PAIR(1));
                                         i++;
                                         j = (int)w/2;
-                                        continue;
                                 }
                                 move(i, j);
                                 addch(ch);
