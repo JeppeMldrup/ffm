@@ -42,7 +42,7 @@ int main(){
         initscr();
         noecho();
         start_color();
-	keypad(stdscr, true);
+        keypad(stdscr, true);
 
         attron(A_BOLD);
 
@@ -64,8 +64,8 @@ int main(){
                 move(0, 0);
                 addstr(wd);
 
-		cdir = opendir(wd);
-		count = getDir(selection, cdir);
+                cdir = opendir(wd);
+                count = getDir(selection, cdir);
 
                 if(cursor < 0)
                         cursor = count-1;
@@ -85,44 +85,44 @@ int main(){
                         displayDir(selection, (int)w/4, cursor, count, h);
                 }
                 else{
-			printf("empty");
+                        printf("empty");
                         strcpy(prevmode, "mpt");
-		}
+                }
 
-		strcpy(buf, wd);
-		strcat(buf, "..");
+                strcpy(buf, wd);
+                strcat(buf, "..");
                 if(wd[1] != '\0' && (prevdir = opendir(buf)) != NULL){
-			count = getDir(prev, prevdir);
+                        count = getDir(prev, prevdir);
                         if(prev[0] != NULL){
                                 sortDir(prev, count);
                                 displayDir(prev, 0, -1, count, h);
                         }
-			closedir(prevdir);
+                        closedir(prevdir);
                 }
 
                 i = 1;
                 j = (int)w/2;
-		strcpy(buf, wd);
-		strcat(buf, selection[cursor]->d_name);
-		if(access(buf, R_OK) < 0){
-			strcpy(message, "File is not readable");
-			sendMessage(message, !searching);
-			strcpy(prevmode, "mpt");
-		}
-		else if(strcmp(prevmode, "cat") == 0){
-			if((cat = fopen(buf, "r")) == NULL)
-				break;
+                strcpy(buf, wd);
+                strcat(buf, selection[cursor]->d_name);
+                if(access(buf, R_OK) < 0){
+                    strcpy(message, "File is not readable");
+                    sendMessage(message, !searching);
+                    strcpy(prevmode, "mpt");
+                }
+                else if(strcmp(prevmode, "cat") == 0){
+                        if((cat = fopen(buf, "r")) == NULL)
+                                break;
                         while((ch = fgetc(cat)) != EOF){
                                 if(i >= h-1)
                                         break;
                                 if(ch == '\n'){
-					i++;
-					j = (int)w/2;
-				}
-				else if(j >= w-3){
-					move(i, j);
-					addch('>' | COLOR_PAIR(1));
-					addch('>' | COLOR_PAIR(1));
+                                        i++;
+                                        j = (int)w/2;
+                                }
+                                else if(j >= w-3){
+                                        move(i, j);
+                                        addch('>' | COLOR_PAIR(1));
+                                        addch('>' | COLOR_PAIR(1));
                                         i++;
                                         j = (int)w/2;
                                 }
@@ -132,84 +132,84 @@ int main(){
                         }
                 }
                 else if(strcmp(prevmode, "dir") == 0){
-			if((nextdir = opendir(buf)) == NULL)
-				break;
-			count = getDir(next, nextdir);
+                        if((nextdir = opendir(buf)) == NULL)
+                                break;
+                        count = getDir(next, nextdir);
                         if(next[0] != NULL){
                                 sortDir(next, count);
                                 displayDir(next, (int)w/2, -1, count, h);
                         }
-			else
-				strcpy(prevmode, "mpt");
-			closedir(nextdir);
+                        else
+                                strcpy(prevmode, "mpt");
+                        closedir(nextdir);
                 }
 
-		if(cdir != NULL)
-			closedir(cdir);
+                if(cdir != NULL)
+                        closedir(cdir);
 
-		if(typing == true){
-			count = 0;
-			i = 0;
-			while(1){
-				if(selection[count] == NULL)
-					break;
-				else if(strstr(selection[count]->d_name, locate) != NULL){
-					size_t size = strcspn(selection[count]->d_name, locate);
-					move(count+1, (int)w/4+(int)size);
-					attron(A_REVERSE);
-					addstr(locate);
-					attroff(A_REVERSE);
-					match[i] = count;
-					i++;
-				}
-				count++;
-			}
-			matchcount = i;
-			snprintf(message, sizeof(message), "%i matches found", i);
-			sendMessage(message, !searching);
+                if(typing == true){
+                        count = 0;
+                        i = 0;
+                        while(1){
+                                if(selection[count] == NULL)
+                                        break;
+                                else if(strstr(selection[count]->d_name, locate) != NULL){
+                                        size_t size = strcspn(selection[count]->d_name, locate);
+                                        move(count+1, (int)w/4+(int)size);
+                                        attron(A_REVERSE);
+                                        addstr(locate);
+                                        attroff(A_REVERSE);
+                                        match[i] = count;
+                                        i++;
+                                }
+                                count++;
+                        }
+                        matchcount = i;
+                        snprintf(message, sizeof(message), "%i matches found", i);
+                        sendMessage(message, !searching);
 
-			ch = getch();
-			if(ch == (char)KEY_BACKSPACE)
-				locate[strlen(locate)-1] = '\0';
-			else if(ch == 10){
-				cursor = match[0];
-				typing = false;
-				searching = true;
-				locate[0] = '\0';
-				erase();
-				snprintf(message, sizeof(message), "1 of %i", matchcount);
-				sendMessage(message, true);
-				continue;
-			}
-			else if(ch >= 32 && ch <= 126)
-				strcat(locate, &ch);
-			else{
-				typing = false;
-				locate[0] = '\0';
-				continue;
-			}
+                        ch = getch();
+                        if(ch == (char)KEY_BACKSPACE)
+                                locate[strlen(locate)-1] = '\0';
+                        else if(ch == 10){
+                                cursor = match[0];
+                                typing = false;
+                                searching = true;
+                                locate[0] = '\0';
+                                erase();
+                                snprintf(message, sizeof(message), "1 of %i", matchcount);
+                                sendMessage(message, true);
+                                continue;
+                        }
+                        else if(ch >= 32 && ch <= 126)
+                            strcat(locate, &ch);
+                        else{
+                            typing = false;
+                            locate[0] = '\0';
+                            continue;
+                        }
 
-			erase();
-			move(h-1, (int)w/2);
-			addstr(locate);
-			continue;
-		}
+                        erase();
+                        move(h-1, (int)w/2);
+                        addstr(locate);
+                        continue;
+                }
 
                 input = getch();
                 switch(input){
-			case 'n':
-				if(searching){
-					matchcursor++;
-					if(matchcursor >= matchcount)
-						matchcursor = 0;
-					cursor = match[matchcursor];
-					snprintf(message, sizeof(message), "%i of %i", matchcursor+1, matchcount);
-					erase();
-					sendMessage(message, true);
-					continue;
-				}
-				erase();
-				continue;
+                        case 'n':
+                                if(searching){
+                                        matchcursor++;
+                                        if(matchcursor >= matchcount)
+                                                matchcursor = 0;
+                                        cursor = match[matchcursor];
+                                        snprintf(message, sizeof(message), "%i of %i", matchcursor+1, matchcount);
+                                        erase();
+                                        sendMessage(message, true);
+                                        continue;
+                                }
+                                erase();
+                                continue;
                         case 'q':
                                 endwin();
                                 exit(0);
@@ -229,15 +229,15 @@ int main(){
                                 continue;
                         case (char)KEY_RIGHT:
                         case 'l':
-				searching = false;
+                                searching = false;
                                 if(strcmp(prevmode, "mpt") == 0){
                                         strcpy(message, "Folder is empty");
-					sendMessage(message, true);
+                                        sendMessage(message, true);
                                         continue;
                                 }
                                 else if(strcmp(prevmode, "dir") != 0){
                                         strcat(wd, selection[cursor]->d_name);
-                                        snprintf(buf, bufsize, "xdg-open %s", wd);
+                                        snprintf(buf, bufsize, "xdg-open %s & disown", wd);
                                         system(buf);
                                         endwin();
                                         exit(0);
@@ -251,20 +251,20 @@ int main(){
                                 }
                         case (char)KEY_LEFT:
                         case 'h':
-				searching = false;
+                                searching = false;
                                 j = 0;
-				if(wd[1] == '\0'){
-					strcpy(message, "At root directory\0");
-					sendMessage(message, true);
-					continue;
-				}
-				prevDir(wd);
-				selection[0] = NULL;
+                                if(wd[1] == '\0'){
+                                        strcpy(message, "At root directory\0");
+                                        sendMessage(message, true);
+                                        continue;
+                                }
+                                prevDir(wd);
+                                selection[0] = NULL;
                                 continue;
                         case 'y':
                                 if(selection[0] == NULL){
                                         strcpy(message, "No file selected");
-					sendMessage(message, true);
+                                        sendMessage(message, true);
                                         continue;
                                 }
                                 strcpy(cploc, wd);
@@ -276,12 +276,12 @@ int main(){
                                 mvloc[0] = '\0';
                                 erase();
                                 snprintf(message, sizeof(message), "File %s yanked for copying", selection[cursor]->d_name);
-				sendMessage(message, true);
+                                sendMessage(message, true);
                                 continue;
                         case 'm':
                                 if(selection[0] == NULL){
                                         strcpy(message, "No file selected");
-					sendMessage(message, true);
+                                        sendMessage(message, true);
                                         continue;
                                 }
                                 strcpy(mvloc, wd);
@@ -289,7 +289,7 @@ int main(){
                                 cploc[0] = '\0';
                                 erase();
                                 snprintf(message, sizeof(message), "File %s yanked for moving", selection[cursor]->d_name);
-				sendMessage(message, true);
+                                sendMessage(message, true);
                                 continue;
                         case 'p':
                                 if(cploc[0] != '\0'){
@@ -312,39 +312,39 @@ int main(){
                                 else{
                                         erase();
                                         strcpy(message, "No file selected");
-					sendMessage(message, true);
+                                        sendMessage(message, true);
                                         continue;
                                 }
-			case '.':
-				hideDotFiles = !hideDotFiles;
-				erase();
-				continue;
-			case 'g':
-				input = getch();
-				if(input == 'g')
-					cursor = 0;
-				erase();
-				continue;
-			case 'G':
-				for(i = 0; i < bufsize; i++){
-					if(selection[i] == NULL){
-						cursor = i-1;
-						break;
-					}
-				}
-				erase();
-				continue;
-			case '/':
-				typing = true;
-				erase();
-				continue;
+                        case '.':
+                            hideDotFiles = !hideDotFiles;
+                            erase();
+                            continue;
+                        case 'g':
+                            input = getch();
+                            if(input == 'g')
+                                cursor = 0;
+                            erase();
+                            continue;
+                        case 'G':
+                            for(i = 0; i < bufsize; i++){
+                                if(selection[i] == NULL){
+                                    cursor = i-1;
+                                    break;
+                                }
+                            }
+                            erase();
+                            continue;
+                        case '/':
+                            typing = true;
+                            erase();
+                            continue;
                         default:
-                                erase();
-                                continue;
+                            erase();
+                            continue;
                 }
         }
 
-        exit(0);
+        return EXIT_SUCCESS;
 }
 
 void displayDir(struct dirent *dir[], int w, int cursor, int size, int h){
@@ -362,39 +362,39 @@ void displayDir(struct dirent *dir[], int w, int cursor, int size, int h){
                         break;
                 if(cursor == i){
                         switch(dir[i]->d_type){
-				case DT_REG:
-					attron(COLOR_PAIR(1) | A_REVERSE);
-					addstr(dir[i]->d_name);
-					attroff(COLOR_PAIR(1) | A_REVERSE);
-					continue;
-				case DT_DIR:
-					attron(COLOR_PAIR(2) | A_REVERSE);
-					addstr(dir[i]->d_name);
-					addch('/');
-					attroff(COLOR_PAIR(2) | A_REVERSE);
-					continue;
-				default:
-					attron(A_REVERSE);
-					addstr(dir[i]->d_name);
-					attroff(A_REVERSE);
-			}
-		}
+                                case DT_REG:
+                                    attron(COLOR_PAIR(1) | A_REVERSE);
+                                    addstr(dir[i]->d_name);
+                                    attroff(COLOR_PAIR(1) | A_REVERSE);
+                                    continue;
+                                case DT_DIR:
+                                    attron(COLOR_PAIR(2) | A_REVERSE);
+                                    addstr(dir[i]->d_name);
+                                    addch('/');
+                                    attroff(COLOR_PAIR(2) | A_REVERSE);
+                                    continue;
+                                default:
+                                    attron(A_REVERSE);
+                                    addstr(dir[i]->d_name);
+                                    attroff(A_REVERSE);
+                        }
+                }
                 else{
                         switch(dir[i]->d_type){
-				case DT_REG:
-					attron(COLOR_PAIR(1));
-					addstr(dir[i]->d_name);
-					attroff(COLOR_PAIR(1));
-					continue;
-				case DT_DIR:
-					attron(COLOR_PAIR(2));
-					addstr(dir[i]->d_name);
-					addch('/');
-					attroff(COLOR_PAIR(2));
-					continue;
-				default:
-					addstr(dir[i]->d_name);
-			}
+                                case DT_REG:
+                                    attron(COLOR_PAIR(1));
+                                    addstr(dir[i]->d_name);
+                                    attroff(COLOR_PAIR(1));
+                                    continue;
+                                case DT_DIR:
+                                    attron(COLOR_PAIR(2));
+                                    addstr(dir[i]->d_name);
+                                    addch('/');
+                                    attroff(COLOR_PAIR(2));
+                                    continue;
+                                default:
+                                    addstr(dir[i]->d_name);
+                        }
                 }
         }
 }
@@ -430,37 +430,37 @@ void resize(int sig){
 }
 
 void prevDir(char *wd){
-	int i = 0, j = 0;
-	for(i; i < bufsize; i++){
-		if(wd[i] == '\0'){
-			j = i-2;
-			while(wd[j] != '/' && j > 0){
-				wd[j] = '\0';
-				j--;
-			}
-			erase();
-			break;
-		}
-	}
+        int i = 0, j = 0;
+        for(i; i < bufsize; i++){
+                if(wd[i] == '\0'){
+                        j = i-2;
+                        while(wd[j] != '/' && j > 0){
+                                wd[j] = '\0';
+                                j--;
+                        }
+                        erase();
+                        break;
+                }
+        }
 }
 
 void sendMessage(char *message, bool show){
-	if(!show)
-		return;
-	move(h-1, 0);
-	addstr(message);
+        if(!show)
+            return;
+        move(h-1, 0);
+        addstr(message);
 }
 
 int getDir(struct dirent *ddir[], DIR *dir){
-                int count = 0;
-                while(1){
-			if(dir == NULL)
-				break;
+        int count = 0;
+        while(1){
+                if(dir == NULL)
+                break;
                         if((ddir[count] = readdir(dir)) == NULL || count >= dirsize)
                                 break;
                         if(ddir[count]->d_name[0] == '.' && hideDotFiles)
                                 continue;
                         count++;
                 }
-		return count;
+        return count;
 }
